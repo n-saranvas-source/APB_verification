@@ -1,0 +1,88 @@
+module ALU (
+    input logic [31:0] A, B,
+    input logic [4:0] ALUControl,
+    output logic [31:0] Result,
+    output logic Zero,
+    output logic Carry,
+    output logic Overflow,
+    output logic Negative
+);
+
+    logic [32:0] Sum; // Extra bit for carry
+    logic [63:0] Product; // For multiplication
+
+    always_comb begin
+        Carry = 0;      // Default: Carry is 0 for non-arithmetic ops
+        Overflow = 0;   // Default: Overflow is 0 for non-arithmetic ops
+
+        case (ALUControl)
+            5'b00000: Result = A & B; // AND
+            5'b00001: Result = A | B; // OR
+            5'b00010: Result = A ^ B; // XOR
+            5'b00011: Result = ~(A & B); // NAND
+            5'b00100: Result = ~A; // NOT
+            5'b00101: begin // ADDU (Unsigned Add)
+                Sum = A + B;
+                Result = Sum[31:0];
+                Carry = Sum[32];
+                Overflow = 0;
+            end
+            5'b00110: begin // ADDS (Signed Add)
+                Sum = A + B;
+                Result = Sum[31:0];
+                Carry = Sum[32];
+                Overflow = (A[31] == B[31]) && (Result[31] != A[31]);
+            end
+            5'b00111: begin // SUBU (Unsigned Subtract)
+                Sum = A - B;
+                Result = Sum[31:0];
+                Carry = Sum[32];
+                Overflow = 0;
+            end
+            5'b01000: begin // SUBS (Signed Subtract)
+                Sum = A - B;
+                Result = Sum[31:0];
+                Carry = Sum[32];
+                Overflow = (A[31] != B[31]) && (Result[31] != A[31]);
+            end
+            5'b01001: begin // MULTU (Unsigned Multiply)
+                Product = A * B;
+                Result = Product[31:0];
+                Carry = Product[32];
+                Overflow = 0;
+            end
+            5'b01010: begin // MULTS (Signed Multiply)
+                Product = $signed(A) * $signed(B);
+                Result = Product[31:0];
+                Carry = Product[32];
+                Overflow = (Product[63:32] != 0);
+            end
+            5'b01011: Result = (A < B) ? 32'b1 : 32'b0; // SLT (Set Less Than)
+            5'b01100: Result = (A < B) ? 32'b1 : 32'b0; // SLTU (Set Less Than Unsigned)
+            5'b01101: Result = (A == B) ? 32'b1 : 32'b0; // SEQ (Set Equal)
+            5'b01110: Result = (A != B) ? 32'b1 : 32'b0; // SNE (Set Not Equal)
+            5'b01111: Result = (A <= B) ? 32'b1 : 32'b0; // SLE (Set Less or Equal)
+            5'b10000: Result = (A >= B) ? 32'b1 : 32'b0; // SGE (Set Greater or Equal)
+            5'b10001: Result = (A > B) ? 32'b1 : 32'b0; // SGT (Set Greater Than)
+            5'b10010: Result = (A <= B) ? 32'b1 : 32'b0; // SLEU (Set Less or Equal Unsigned)
+            5'b10011: Result = (A >= B) ? 32'b1 : 32'b0; // SGEU (Set Greater or Equal Unsigned)
+            5'b10100: Result = (A > B) ? 32'b1 : 32'b0; // SGTU (Set Greater Than Unsigned)
+            5'b10101: Result = (A == 0) ? 32'b1 : 32'b0; // SEQZ (Set Equal Zero)
+            5'b10110: Result = (A != 0) ? 32'b1 : 32'b0; // SNEZ (Set Not Equal Zero)
+            5'b10111: Result = (A[31] == 1) ? 32'b1 : 32'b0; // SNEG (Set Negative)
+            5'b11000: Result = (A[31] == 0) ? 32'b1 : 32'b0; // SPOS (Set Positive)
+            5'b11001: Result = (A == 0) ? 32'b1 : 32'b0; // SEQZ (Set Equal Zero)
+            5'b11010: Result = (A != 0) ? 32'b1 : 32'b0; // SNEZ (Set Not Equal Zero)
+            5'b11011: Result = (A[31] == 1) ? 32'b1 : 32'b0; // SNEG (Set Negative)
+            5'b11100: Result = (A[31] == 0) ? 32'b1 : 32'b0; // SPOS (Set Positive)
+            5'b11101: Result = (A == 0) ? 32'b1 : 32'b0; // SEQZ (Set Equal Zero)
+            5'b11110: Result = (A != 0) ? 32'b1 : 32'b0; // SNEZ (Set Not Equal Zero)
+            5'b11111: Result = (A[31] == 1) ? 32'b1 : 32'b0; // SNEG (Set Negative)
+            default: Result = 32'b0;
+        endcase
+
+        Zero = (Result == 32'b0);
+        Negative = Result[31];
+    end
+
+endmodule
